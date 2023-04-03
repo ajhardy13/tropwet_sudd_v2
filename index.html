@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TropWet map</title>
+<!--<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />-->
+<meta name='viewport' content='width=device-width, initial-scale=1.0' />
+
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.1.0/dist/leaflet.css"
+integrity="sha384-Zh+y1U8o6/7ni8Mp8szvUfZjGeKKS10CGH3IlD6L1X+XwzYgQ1llOjw/Wslc0cma"
+crossorigin="anonymous">
+<script src="https://unpkg.com/leaflet@1.1.0/dist/leaflet.js"
+integrity="sha384-6rCYjRgWDEI2RlZxiVihj1WIZB/uvFiRCGpavTVgFrSPDL0Bk1AiqCW+mmv5h0LP"
+crossorigin="anonymous"></script>
+
+<style>
+body { margin:0; padding:0; }
+body, table, tr, td, th, div, h1, h2, input { font-family: "Calibri", "Trebuchet MS", "Ubuntu", Serif; font-size: 11pt; }
+#map { position:absolute; top:0; bottom:0; width:100%; } /* full size */
+.ctl {
+padding: 2px 10px 2px 10px;
+background: white;
+background: rgba(255,255,255,0.9);
+box-shadow: 0 0 15px rgba(0,0,0,0.2);
+border-radius: 5px;
+text-align: right;
+}
+.title {
+font-size: 14pt;
+font-weight: bold;
+}
+.src {
+font-size: 10pt;
+}
+
+	
+	
+/*Legend specific*/
+.legend {
+  padding: 6px 8px;
+  font: 14px Arial, Helvetica, sans-serif;
+  background: white;
+  background: rgba(255, 255, 255, 0.8);
+  /*box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);*/
+  /*border-radius: 5px;*/
+  line-height: 24px;
+  color: #555;
+}
+.legend h4 {
+  text-align: left;
+  font-size: 14px;
+  margin: 2px 12px 8px;
+  color: #777;
+}
+
+.legend span {
+  position: relative;
+  bottom: 3px;
+}
+
+.legend i {
+  width: 18px;
+  height: 18px;
+  float: left;
+  margin: 0 8px 0 0;
+  opacity: 0.7;
+}
+
+.legend i.icon {
+  background-size: 18px;
+  background-color: rgba(255, 255, 255, 1);
+}	
+
+</style>
+
+</head>
+<body>
+
+<div id="map"></div>
+
+<script>
+
+/* **** Leaflet **** */
+var maxZoom = 14;
+
+// Map
+var map = L.map('map', {
+center: [7.60694954, 30.84961664],
+zoom: 10,
+minZoom: 1,
+maxZoom: maxZoom
+});
+
+
+// Base layers
+//  .. OpenStreetMap
+var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', minZoom: 1, maxZoom: maxZoom}).addTo(map);
+	
+//  .. CartoDB Positron
+var cartodb = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>', minZoom: 1, maxZoom: maxZoom});
+	
+mapLink = '<a href="http://www.esri.com/">Esri</a>';
+wholink = 'i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community';
+var satImg = L.tileLayer(
+'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution: '&copy; '+mapLink+', '+wholink, maxZoom: maxZoom});
+
+//  .. OSM Toner
+//var toner = L.tileLayer('http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png', {attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.', minZoom: 1, maxZoom: maxZoom});
+
+//  .. White background
+var white = L.tileLayer("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAABmvDolAAAAA1BMVEX///+nxBvIAAAAH0lEQVQYGe3BAQ0AAADCIPunfg43YAAAAAAAAAAA5wIhAAAB9aK9BAAAAABJRU5ErkJggg==", {minZoom: 1, maxZoom: maxZoom});
+
+	
+
+var opacity = 0.7;	
+
+// Overlay layers (TMS)
+
+	
+var class_2022 = L.tileLayer('./tiles_Classified_Output_10_to_12_2022_to_2022/{z}/{x}/{y}.png', {tms: true, opacity: opacity, attribution: "", minZoom: 1, maxZoom: maxZoom});
+
+var class_mode = L.tileLayer('./tiles_Classified_Output_1984_2022_mode/{z}/{x}/{y}.png', {tms: true, opacity: opacity, attribution: "", minZoom: 1, maxZoom: maxZoom});
+
+
+var pc_wet = L.tileLayer('./tiles_Classified_Output_1984_2022_pc_wet_byte/{z}/{x}/{y}.png', {tms: true, opacity: opacity, attribution: "", minZoom: 1, maxZoom: maxZoom});
+	
+	
+	
+
+var basemaps = {"OpenStreetMap": osm, "CartoDB Positron": cartodb, "ESRI Imagery": satImg, "Without background": white}
+
+var overlaymaps = {
+	"OND mode 1984-2022 classification": class_mode,
+	"OND 2022 classification": class_2022,
+	"OND % inundated 1984-2022": 	pc_wet}
+
+
+
+var legend2 = L.control({ position: "bottomleft" });
+
+legend2.onAdd = function(map) {
+  var div = L.DomUtil.create("div", "legend");
+	div.innerHTML += "<h4>Frequency (%) Wet</h4>";
+	div.innerHTML += '<i style="background: #ffffcc"></i><span>0%</span><br>';
+	div.innerHTML += '<i style="background: #a1dab4"></i><span>25%</span><br>';
+	div.innerHTML += '<i style="background: #41b6c4"></i><span>50%</span><br>';
+	div.innerHTML += '<i style="background: #2c7fb8"></i><span>75%</span><br>';
+	div.innerHTML += '<i style="background: #253494"></i><span>100%</span><br>';
+
+
+  return div;
+};
+
+// legend2.addTo(map)
+	
+var legend3 = L.control({ position: "bottomleft" });
+	
+legend3.onAdd = function(map) {
+  var div = L.DomUtil.create("div", "legend");
+	div.innerHTML += "<h4>Fractions</h4>";
+	div.innerHTML += '<i style="background: #dd9a72"></i><span>Wet soil</span><br>';
+	div.innerHTML += '<i style="background: #45ae90"></i><span>Inundated veg</span><br>';
+	div.innerHTML += '<i style="background: #63a6c3"></i><span>Aquatic veg</span><br>';
+	div.innerHTML += '<i style="background: #2250ca"></i><span>Water</span><br>';
+  return div;
+};
+
+//legend3.addTo(map)
+
+
+
+	
+// Add and remove layers
+// map.on('overlayadd', function (eventLayer) {
+//     if (eventLayer.name.includes('inundated')) {
+//         map.removeControl(legend1);
+// 		map.removeControl(legend3);
+//         legend2.addTo(map);
+//     } else if (eventLayer.name.includes('Fractions')) {
+//         map.removeControl(legend1);
+// 		map.removeControl(legend2);
+//         legend3.addTo(map);
+//     } else if (eventLayer.name.includes( 'Classified')) {
+//         map.removeControl(legend3);
+// 		map.removeControl(legend2);
+//         legend1.addTo(map)
+//     } else { // Or switch to the treeline legend...
+//         map.removeControl(legend1);
+//         map.removeControl(legend2);
+//         map.removeControl(legend3);
+//     }
+// });
+
+
+map.on('overlayadd', function (eventLayer) {
+    if (eventLayer.name.includes('inundated')) {
+        legend2.addTo(map);
+        map.removeControl(legend3);
+    } else if (eventLayer.name.includes( 'class')) {
+        legend3.addTo(map);
+        map.removeControl(legend2);
+    
+    } else {
+    map.removeControl(legend2)
+    map.removeControl(legend3)
+    
+    }
+    
+    });
+
+
+// Title
+var title = L.control();
+title.onAdd = function(map) {
+this._div = L.DomUtil.create('div', 'ctl title');
+this.update();
+return this._div;
+};
+title.update = function(props) {
+this._div.innerHTML = "Wetland map generated using TropWet";
+};
+title.addTo(map);
+
+
+
+// Add base layers
+L.control.layers(basemaps, overlaymaps, {collapsed: false}).addTo(map);
+
+// Fit to overlay bounds (SW and NE points with (lat, lon))
+map.fitBounds([[4.51393537, 28.46166675], [9.95728913, 32.10334708]]);
+
+</script>
+
+</body>
+</html>
